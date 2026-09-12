@@ -57,9 +57,10 @@ a final bare entry point such as `Main;`. The compatibility header provides:
 - `U0`, `Bool`, `I8` through `I64`, `U8` through `U64`, and `F64`
 - TempleOS's 16 color names
 - `CDC`, `DCAlias`, `DCDel`, and `DCFill`
-- `GrPlot`, `GrLine`, and `GrRect`
+- `GrPlot`, `GrLine`, `GrRect`, and 5x7 `GrText`
 - `Fs->pix_width` and `Fs->pix_height`
-- `ScanChar`, `Sleep`, `RandI16`, `ClampI64`, and `SignI64`
+- Arrow/WASD input through `KeyDown` and `KeyPressed`
+- `ScanChar`, `HCQuitRequested`, `Sleep`, `RandI16`, `ClampI64`, and `SignI64`
 
 Unsupported HolyC syntax fails during Clang compilation with source locations
 mapped back to the `.HC` file. Known direct hardware operations are rejected
