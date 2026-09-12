@@ -18,4 +18,3 @@ U0 Main()
   DCDel(dc);
 }
 Main;
-Main;

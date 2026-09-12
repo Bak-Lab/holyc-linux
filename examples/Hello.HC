@@ -4,4 +4,3 @@ U0 Main()
   printf("Hello from HolyC on Linux: %lld\n", (long long)answer);
 }
 Main;
-Main;

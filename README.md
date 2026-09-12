@@ -2,8 +2,8 @@
 
 HolyC Linux is an experimental source-compatibility runtime for running a
 useful subset of TempleOS-style HolyC programs as native Linux applications.
-It translates supported `.HC` source into C, compiles it with Clang, and maps
-TempleOS graphics and system calls onto SDL2 and Linux.
+Its C++17 compiler frontend translates supported `.HC` source into C, compiles
+it with Clang, and maps TempleOS graphics and system calls onto SDL2 and Linux.
 
 This is not TempleOS in userspace, a kernel port, or a binary emulator. The
 initial milestone is deliberately small: compile HolyC-like source, open a
@@ -13,7 +13,6 @@ keyboard and window events.
 ## Requirements
 
 - Linux
-- Python 3
 - Clang
 - `pkg-config`
 - SDL2 development files (`sdl2-compat` works on Arch Linux)
@@ -21,7 +20,7 @@ keyboard and window events.
 On Arch Linux:
 
 ```sh
-sudo pacman -S --needed clang python pkgconf sdl2-compat
+sudo pacman -S --needed clang pkgconf sdl2-compat
 ```
 
 ## Try it
@@ -35,7 +34,7 @@ make
 Or compile a file directly:
 
 ```sh
-./bin/holyc examples/Graphics.HC
+./.holyc-build/bin/holyc examples/Graphics.HC
 ./.holyc-build/Graphics
 ```
 
@@ -43,7 +42,8 @@ Use `-o` to select the executable path and `--emit-c` to inspect the generated
 C:
 
 ```sh
-./bin/holyc examples/Graphics.HC -o build/graphics --emit-c build/graphics.c
+./.holyc-build/bin/holyc examples/Graphics.HC \
+  -o build/graphics --emit-c build/graphics.c
 ```
 
 Press any key or close the window to stop a graphical program that watches
