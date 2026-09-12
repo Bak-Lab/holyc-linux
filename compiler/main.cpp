@@ -211,6 +211,7 @@ int main(int argc, char **argv)
         (root / "runtime/src/holyc_runtime.c").string(),
         "-o",
         output.string(),
+        "-lm",
     };
     const std::vector<std::string> sdl_flags = pkg_config_flags();
     for (const fs::path &include_path : options.include_paths) {
