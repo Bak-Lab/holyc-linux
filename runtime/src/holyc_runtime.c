@@ -216,7 +216,6 @@ U0 DCDel(CDC *dc)
 U0 DCFill(CDC *dc)
 {
   memset(pixels, dc ? (int)(dc->color & 15) : BLACK, sizeof(pixels));
-  present();
 }
 
 Bool GrPlot(CDC *dc, I64 x, I64 y)
