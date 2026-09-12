@@ -51,6 +51,32 @@ enum {
   HC_KEY_COUNT
 };
 
+enum {
+  HC_PAD_A,
+  HC_PAD_B,
+  HC_PAD_X,
+  HC_PAD_Y,
+  HC_PAD_BACK,
+  HC_PAD_START,
+  HC_PAD_LEFT_SHOULDER,
+  HC_PAD_RIGHT_SHOULDER,
+  HC_PAD_DPAD_UP,
+  HC_PAD_DPAD_DOWN,
+  HC_PAD_DPAD_LEFT,
+  HC_PAD_DPAD_RIGHT,
+  HC_PAD_BUTTON_COUNT
+};
+
+enum {
+  HC_PAD_AXIS_LEFT_X,
+  HC_PAD_AXIS_LEFT_Y,
+  HC_PAD_AXIS_RIGHT_X,
+  HC_PAD_AXIS_RIGHT_Y,
+  HC_PAD_AXIS_TRIGGER_LEFT,
+  HC_PAD_AXIS_TRIGGER_RIGHT,
+  HC_PAD_AXIS_COUNT
+};
+
 typedef struct {
   I64 color;
   I64 thick;
@@ -69,6 +95,10 @@ Bool HCScanChar(void);
 Bool HCQuitRequested(void);
 Bool KeyDown(I64 key);
 Bool KeyPressed(I64 key);
+Bool GamepadConnected(void);
+Bool GamepadButtonDown(I64 button);
+Bool GamepadButtonPressed(I64 button);
+I64 GamepadAxis(I64 axis);
 I16 HCRandI16(void);
 
 #define DCAlias HCDCAlias()

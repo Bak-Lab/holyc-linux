@@ -60,6 +60,7 @@ a final bare entry point such as `Main;`. The compatibility header provides:
 - `GrPlot`, `GrLine`, `GrRect`, and 5x7 `GrText`
 - `Fs->pix_width` and `Fs->pix_height`
 - Arrow/WASD input through `KeyDown` and `KeyPressed`
+- Hot-pluggable SDL gamepads with buttons, D-pad, sticks, and triggers
 - `ScanChar`, `HCQuitRequested`, `Sleep`, `RandI16`, `ClampI64`, and `SignI64`
 
 Unsupported HolyC syntax fails during Clang compilation with source locations

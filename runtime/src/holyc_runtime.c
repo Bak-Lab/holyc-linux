@@ -17,6 +17,8 @@ static const U32 palette[16] = {
 static SDL_Window *window;
 static SDL_Renderer *renderer;
 static SDL_Texture *texture;
+static SDL_GameController *gamepad;
+static SDL_JoystickID gamepad_instance = -1;
 static U8 pixels[HC_WIDTH * HC_HEIGHT];
 static U32 display_pixels[HC_WIDTH * HC_HEIGHT];
 static CTask task = {HC_WIDTH, HC_HEIGHT};
@@ -24,6 +26,8 @@ static U32 random_state = 0x54454D50U;
 static Bool quit_requested;
 static Bool key_down[HC_KEY_COUNT];
 static Bool key_pressed[HC_KEY_COUNT];
+static Bool gamepad_button_down[HC_PAD_BUTTON_COUNT];
+static Bool gamepad_button_pressed[HC_PAD_BUTTON_COUNT];
 static Bool initialized;
 
 static I64 map_key(SDL_Scancode code)
@@ -50,6 +54,92 @@ static I64 map_key(SDL_Scancode code)
   default:
     return -1;
   }
+}
+
+static I64 map_gamepad_button(U8 button)
+{
+  switch ((SDL_GameControllerButton)button) {
+  case SDL_CONTROLLER_BUTTON_A:
+    return HC_PAD_A;
+  case SDL_CONTROLLER_BUTTON_B:
+    return HC_PAD_B;
+  case SDL_CONTROLLER_BUTTON_X:
+    return HC_PAD_X;
+  case SDL_CONTROLLER_BUTTON_Y:
+    return HC_PAD_Y;
+  case SDL_CONTROLLER_BUTTON_BACK:
+    return HC_PAD_BACK;
+  case SDL_CONTROLLER_BUTTON_START:
+    return HC_PAD_START;
+  case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
+    return HC_PAD_LEFT_SHOULDER;
+  case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
+    return HC_PAD_RIGHT_SHOULDER;
+  case SDL_CONTROLLER_BUTTON_DPAD_UP:
+    return HC_PAD_DPAD_UP;
+  case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+    return HC_PAD_DPAD_DOWN;
+  case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
+    return HC_PAD_DPAD_LEFT;
+  case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+    return HC_PAD_DPAD_RIGHT;
+  default:
+    return -1;
+  }
+}
+
+static SDL_GameControllerAxis map_gamepad_axis(I64 axis)
+{
+  switch (axis) {
+  case HC_PAD_AXIS_LEFT_X:
+    return SDL_CONTROLLER_AXIS_LEFTX;
+  case HC_PAD_AXIS_LEFT_Y:
+    return SDL_CONTROLLER_AXIS_LEFTY;
+  case HC_PAD_AXIS_RIGHT_X:
+    return SDL_CONTROLLER_AXIS_RIGHTX;
+  case HC_PAD_AXIS_RIGHT_Y:
+    return SDL_CONTROLLER_AXIS_RIGHTY;
+  case HC_PAD_AXIS_TRIGGER_LEFT:
+    return SDL_CONTROLLER_AXIS_TRIGGERLEFT;
+  case HC_PAD_AXIS_TRIGGER_RIGHT:
+    return SDL_CONTROLLER_AXIS_TRIGGERRIGHT;
+  default:
+    return SDL_CONTROLLER_AXIS_INVALID;
+  }
+}
+
+static U0 close_gamepad(void)
+{
+  if (gamepad)
+    SDL_GameControllerClose(gamepad);
+  gamepad = NULL;
+  gamepad_instance = -1;
+  memset(gamepad_button_down, 0, sizeof(gamepad_button_down));
+  memset(gamepad_button_pressed, 0, sizeof(gamepad_button_pressed));
+}
+
+static U0 open_gamepad(I64 device_index)
+{
+  SDL_Joystick *joystick;
+
+  if (gamepad || device_index < 0 ||
+      device_index >= SDL_NumJoysticks() ||
+      !SDL_IsGameController((int)device_index))
+    return;
+
+  gamepad = SDL_GameControllerOpen((int)device_index);
+  if (!gamepad)
+    return;
+  joystick = SDL_GameControllerGetJoystick(gamepad);
+  gamepad_instance = SDL_JoystickInstanceID(joystick);
+}
+
+static U0 open_first_gamepad(void)
+{
+  I64 index;
+
+  for (index = 0; index < SDL_NumJoysticks() && !gamepad; index++)
+    open_gamepad(index);
 }
 
 static U0 present(void)
@@ -82,6 +172,21 @@ static U0 pump_events(void)
         if (event.type == SDL_KEYDOWN && !event.key.repeat)
           key_pressed[key] = true;
       }
+    } else if (event.type == SDL_CONTROLLERBUTTONDOWN ||
+               event.type == SDL_CONTROLLERBUTTONUP) {
+      const I64 button = map_gamepad_button(event.cbutton.button);
+      if (event.cbutton.which == gamepad_instance && button >= 0) {
+        gamepad_button_down[button] =
+            event.type == SDL_CONTROLLERBUTTONDOWN;
+        if (event.type == SDL_CONTROLLERBUTTONDOWN)
+          gamepad_button_pressed[button] = true;
+      }
+    } else if (event.type == SDL_CONTROLLERDEVICEADDED) {
+      open_gamepad(event.cdevice.which);
+    } else if (event.type == SDL_CONTROLLERDEVICEREMOVED &&
+               event.cdevice.which == gamepad_instance) {
+      close_gamepad();
+      open_first_gamepad();
     }
   }
 }
@@ -94,7 +199,7 @@ Bool HCInit(int argc, char **argv)
   if (initialized)
     return true;
 
-  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
+  if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER) != 0) {
     fprintf(stderr, "holyc runtime: SDL initialization failed: %s\n", SDL_GetError());
     return false;
   }
@@ -126,7 +231,10 @@ Bool HCInit(int argc, char **argv)
   memset(pixels, BLACK, sizeof(pixels));
   memset(key_down, 0, sizeof(key_down));
   memset(key_pressed, 0, sizeof(key_pressed));
+  memset(gamepad_button_down, 0, sizeof(gamepad_button_down));
+  memset(gamepad_button_pressed, 0, sizeof(gamepad_button_pressed));
   quit_requested = false;
+  open_first_gamepad();
   initialized = true;
   present();
   return true;
@@ -134,6 +242,7 @@ Bool HCInit(int argc, char **argv)
 
 U0 HCShutdown(void)
 {
+  close_gamepad();
   SDL_DestroyTexture(texture);
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
@@ -173,6 +282,9 @@ Bool HCScanChar(void)
   for (key = 0; key < HC_KEY_COUNT; ++key)
     if (key_pressed[key])
       return true;
+  for (key = 0; key < HC_PAD_BUTTON_COUNT; ++key)
+    if (gamepad_button_pressed[key])
+      return true;
   return false;
 }
 
@@ -198,6 +310,41 @@ Bool KeyPressed(I64 key)
   pressed = key_pressed[key];
   key_pressed[key] = false;
   return pressed;
+}
+
+Bool GamepadConnected(void)
+{
+  pump_events();
+  return gamepad && SDL_GameControllerGetAttached(gamepad);
+}
+
+Bool GamepadButtonDown(I64 button)
+{
+  pump_events();
+  return button >= 0 && button < HC_PAD_BUTTON_COUNT &&
+         gamepad_button_down[button];
+}
+
+Bool GamepadButtonPressed(I64 button)
+{
+  Bool pressed;
+
+  pump_events();
+  if (button < 0 || button >= HC_PAD_BUTTON_COUNT)
+    return false;
+  pressed = gamepad_button_pressed[button];
+  gamepad_button_pressed[button] = false;
+  return pressed;
+}
+
+I64 GamepadAxis(I64 axis)
+{
+  const SDL_GameControllerAxis mapped_axis = map_gamepad_axis(axis);
+
+  pump_events();
+  if (!gamepad || mapped_axis == SDL_CONTROLLER_AXIS_INVALID)
+    return 0;
+  return SDL_GameControllerGetAxis(gamepad, mapped_axis);
 }
 
 I16 HCRandI16(void)
