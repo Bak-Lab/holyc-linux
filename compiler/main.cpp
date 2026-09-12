@@ -21,11 +21,12 @@ struct Options {
   fs::path source;
   fs::path output;
   fs::path emit_c;
+  std::vector<fs::path> include_paths;
 };
 
 void usage(std::ostream &stream)
 {
-  stream << "Usage: holyc SOURCE [-o OUTPUT] [--emit-c PATH]\n"
+  stream << "Usage: holyc SOURCE [-I DIR] [-o OUTPUT] [--emit-c PATH]\n"
             "Compile a supported HolyC source file for Linux.\n";
 }
 
@@ -37,6 +38,16 @@ Options parse_options(int argc, char **argv)
     if (argument == "-h" || argument == "--help") {
       usage(std::cout);
       std::exit(0);
+    }
+    if (argument == "-I") {
+      if (++index >= argc)
+        throw std::runtime_error("-I requires a directory");
+      options.include_paths.emplace_back(argv[index]);
+      continue;
+    }
+    if (argument.size() > 2 && argument.rfind("-I", 0) == 0) {
+      options.include_paths.emplace_back(argument.substr(2));
+      continue;
     }
     if (argument == "-o" || argument == "--output" ||
         argument == "--emit-c") {
@@ -202,6 +213,10 @@ int main(int argc, char **argv)
         output.string(),
     };
     const std::vector<std::string> sdl_flags = pkg_config_flags();
+    for (const fs::path &include_path : options.include_paths) {
+      command.push_back("-I");
+      command.push_back(fs::absolute(include_path).string());
+    }
     command.insert(command.end(), sdl_flags.begin(), sdl_flags.end());
 
     const int result = run_process(command);

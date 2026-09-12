@@ -39,11 +39,11 @@ Or compile a file directly:
 ```
 
 Use `-o` to select the executable path and `--emit-c` to inspect the generated
-C:
+C. Repeat `-I` to add directories containing reusable `.HC` files:
 
 ```sh
 ./.holyc-build/bin/holyc examples/Graphics.HC \
-  -o build/graphics --emit-c build/graphics.c
+  -I path/to/includes -o build/graphics --emit-c build/graphics.c
 ```
 
 Press any key or close the window to stop a graphical program that watches
