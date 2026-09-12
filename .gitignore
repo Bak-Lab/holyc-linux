@@ -1,0 +1,3 @@
+.holyc-build/
+__pycache__/
+*.pyc
